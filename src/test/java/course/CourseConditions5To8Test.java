@@ -30,12 +30,17 @@ class CourseConditions5To8Test {
 
     private static void assertStoredDetails(Assessment assessment, String name, int points,
                                             String submissionType) {
+        assertStoredDetails(assessment, name, points, submissionType, false, "");
+    }
+
+    private static void assertStoredDetails(Assessment assessment, String name, int points,
+                                            String submissionType, boolean group, String groupingName) {
         assertEquals(name, assessment.getName());
         assertEquals(DESCRIPTION, assessment.getDescription());
         assertEquals(points, assessment.getPoints());
         assertEquals(submissionType, assessment.getSubmissionType());
-        assertFalse(assessment.isGroup());
-        assertEquals("", assessment.getGroupingName());
+        assertEquals(group, assessment.isGroup());
+        assertEquals(groupingName, assessment.getGroupingName());
         assertEquals(PUBLISH, assessment.getPublishDateTime());
         assertEquals(DUE, assessment.getDueDateTime());
         assertEquals(HIDE, assessment.getHideDateTime());
@@ -139,6 +144,38 @@ class CourseConditions5To8Test {
                 assertStoredDetails(course.getAssessments().get(i),
                         validTypes[i] + " assessment", 1, validTypes[i]);
             }
+        }
+    }
+
+    @Test
+    void tc08GroupWithoutGroupingNameRejectedWithoutChangingExistingAssessments() {
+        Course course = new Course();
+        assertTrue(course.getAssessments().isEmpty(), "precondition: course is empty");
+
+        // Precondition: an individual assessment can have no grouping name.
+        assertTrue(addAssessment(course, "individual assessment", 1));
+        // A group assessment with a nonblank grouping name must be accepted.
+        assertTrue(course.createNewAssessment("group assessment", DESCRIPTION, 1,
+                SUBMISSION_TYPE, true, "team alpha", PUBLISH, DUE, HIDE));
+        assertEquals(2, course.getAssessments().size());
+        Assessment individual = course.getAssessments().get(0);
+        Assessment grouped = course.getAssessments().get(1);
+        assertStoredDetails(individual, "individual assessment", 1);
+        assertStoredDetails(grouped, "group assessment", 1, SUBMISSION_TYPE, true, "team alpha");
+
+        // C8: Empty, whitespace-only and null names are missing grouping names.
+        // All other inputs are valid; the proposed course total is only 3.
+        for (String missingName : new String[] {"", " ", null}) {
+            assertFalse(course.createNewAssessment("invalid assessment", DESCRIPTION, 1,
+                    SUBMISSION_TYPE, true, missingName, PUBLISH, DUE, HIDE),
+                    "condition 8: group assessments need a grouping name");
+            assertEquals(2, course.getAssessments().size(),
+                    "rejection must not add an assessment");
+            assertSame(individual, course.getAssessments().get(0));
+            assertSame(grouped, course.getAssessments().get(1));
+            assertStoredDetails(course.getAssessments().get(0), "individual assessment", 1);
+            assertStoredDetails(course.getAssessments().get(1),
+                    "group assessment", 1, SUBMISSION_TYPE, true, "team alpha");
         }
     }
 }
