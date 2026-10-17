@@ -25,10 +25,15 @@ class CourseConditions5To8Test {
     }
 
     private static void assertStoredDetails(Assessment assessment, String name, int points) {
+        assertStoredDetails(assessment, name, points, SUBMISSION_TYPE);
+    }
+
+    private static void assertStoredDetails(Assessment assessment, String name, int points,
+                                            String submissionType) {
         assertEquals(name, assessment.getName());
         assertEquals(DESCRIPTION, assessment.getDescription());
         assertEquals(points, assessment.getPoints());
-        assertEquals(SUBMISSION_TYPE, assessment.getSubmissionType());
+        assertEquals(submissionType, assessment.getSubmissionType());
         assertFalse(assessment.isGroup());
         assertEquals("", assessment.getGroupingName());
         assertEquals(PUBLISH, assessment.getPublishDateTime());
@@ -102,5 +107,38 @@ class CourseConditions5To8Test {
         assertStoredDetails(course.getAssessments().get(1), "second assessment", 49);
         assertStoredDetails(course.getAssessments().get(2), "third assessment", 1);
         assertEquals(100, course.getAssessments().stream().mapToInt(Assessment::getPoints).sum());
+    }
+
+    @Test
+    void tc07UnsupportedSubmissionTypesRejectedWithoutChangingExistingAssessments() {
+        Course course = new Course();
+        assertTrue(course.getAssessments().isEmpty(), "precondition: course is empty");
+        String[] validTypes = {"pdf", "zip", "doc"};
+
+        // Precondition: every permitted type is accepted and stored correctly.
+        for (String type : validTypes) {
+            assertTrue(course.createNewAssessment(type + " assessment", DESCRIPTION, 1,
+                    type, false, "", PUBLISH, DUE, HIDE));
+        }
+        assertEquals(3, course.getAssessments().size());
+        List<Assessment> original = List.copyOf(course.getAssessments());
+        for (int i = 0; i < validTypes.length; i++) {
+            assertStoredDetails(original.get(i), validTypes[i] + " assessment", 1, validTypes[i]);
+        }
+
+        // C7: Unsupported and missing types fail. All other inputs are valid;
+        // the name is unique and the proposed total is only four points.
+        for (String invalidType : new String[] {"txt", "docx", "", null}) {
+            assertFalse(course.createNewAssessment("invalid assessment", DESCRIPTION, 1,
+                    invalidType, false, "", PUBLISH, DUE, HIDE),
+                    "condition 7: unsupported or missing submission type must be rejected");
+            assertEquals(original.size(), course.getAssessments().size(),
+                    "rejection must not add an assessment");
+            for (int i = 0; i < original.size(); i++) {
+                assertSame(original.get(i), course.getAssessments().get(i));
+                assertStoredDetails(course.getAssessments().get(i),
+                        validTypes[i] + " assessment", 1, validTypes[i]);
+            }
+        }
     }
 }

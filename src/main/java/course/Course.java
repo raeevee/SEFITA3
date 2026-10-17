@@ -28,13 +28,13 @@ public class Course {
             return false;
         }
 
-        // Conditions 5-8: currently conditions 5 and 6 are implemented.
-        if (!validConditions5To8(points)) {
+        // Conditions 5-8: currently conditions 5-7 are implemented.
+        if (!validConditions5To8(points, submissionType)) {
             return false;
         }
 
         // GROUP INTEGRATION REQUIRED BEFORE FINAL SUBMISSION:
-        // Conditions 7-8 still need to be added to validConditions5To8.
+        // Condition 8 still needs to be added to validConditions5To8.
         // Teammate 2: reject inputs failing conditions 9–11 here.
         // Do not claim this individual file validates all 11 conditions.
 
@@ -80,13 +80,13 @@ public class Course {
     /**
      * Condition 5: Points for one assessment must not exceed 50.
      * Condition 6: Total assessment points must not exceed 100.
-     * Condition 7 (pending): Submission type must be pdf, zip, or doc.
+     * Condition 7: Submission type must be pdf, zip, or doc.
      * Condition 8 (pending): Group assessments must have a grouping name.
      *
-     * Currently conditions 5 and 6 are implemented.
+     * Currently conditions 5-7 are implemented.
      * Validation is read-only: nothing is created or modified on rejection.
      */
-    private boolean validConditions5To8(int points) {
+    private boolean validConditions5To8(int points, String submissionType) {
         // C5: Exactly 50 points is allowed; higher values must be rejected.
         if (points > 50) {
             return false;
@@ -101,7 +101,13 @@ public class Course {
             return false;
         }
 
-        // TODO: Implement conditions 7-8 here.
+        // C7: Only the three specified submission types are allowed.
+        if (!"pdf".equals(submissionType) && !"zip".equals(submissionType)
+                && !"doc".equals(submissionType)) {
+            return false;
+        }
+
+        // TODO: Implement condition 8 here.
         return true;
     }
 }
