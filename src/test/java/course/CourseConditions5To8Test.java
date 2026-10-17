@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,5 +67,40 @@ class CourseConditions5To8Test {
         assertSame(existing, course.getAssessments().get(0),
                 "rejection must preserve the existing assessment object");
         assertStoredDetails(existing, "existing assessment", 1);
+    }
+
+    @Test
+    void tc06TotalAboveOneHundredRejectedWithoutChangingExistingAssessments() {
+        Course course = new Course();
+        assertTrue(course.getAssessments().isEmpty(), "precondition: course is empty");
+        assertTrue(addAssessment(course, "first assessment", 50));
+        assertTrue(addAssessment(course, "second assessment", 49));
+        assertEquals(2, course.getAssessments().size());
+        assertEquals(99, course.getAssessments().stream().mapToInt(Assessment::getPoints).sum(),
+                "precondition: existing assessments total 99 points");
+
+        // C6 valid boundary: 50 + 49 + 1 = 100 must be accepted.
+        assertTrue(addAssessment(course, "third assessment", 1),
+                "condition 6: exactly 100 total points must be accepted");
+        assertEquals(3, course.getAssessments().size());
+        List<Assessment> original = List.copyOf(course.getAssessments());
+        assertStoredDetails(original.get(0), "first assessment", 50);
+        assertStoredDetails(original.get(1), "second assessment", 49);
+        assertStoredDetails(original.get(2), "third assessment", 1);
+
+        // C6 invalid boundary: 100 + 1 = 101. The new name is unique,
+        // and one point satisfies C4 and C5, so only C6 causes rejection.
+        assertFalse(addAssessment(course, "fourth assessment", 1),
+                "condition 6: 101 total points must be rejected");
+        assertEquals(original.size(), course.getAssessments().size(),
+                "rejection must not add an assessment");
+        for (int i = 0; i < original.size(); i++) {
+            assertSame(original.get(i), course.getAssessments().get(i),
+                    "rejection must preserve every existing assessment object");
+        }
+        assertStoredDetails(course.getAssessments().get(0), "first assessment", 50);
+        assertStoredDetails(course.getAssessments().get(1), "second assessment", 49);
+        assertStoredDetails(course.getAssessments().get(2), "third assessment", 1);
+        assertEquals(100, course.getAssessments().stream().mapToInt(Assessment::getPoints).sum());
     }
 }

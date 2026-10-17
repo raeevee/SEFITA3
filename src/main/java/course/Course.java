@@ -28,13 +28,13 @@ public class Course {
             return false;
         }
 
-        // Conditions 5-8: currently only condition 5 is implemented.
+        // Conditions 5-8: currently conditions 5 and 6 are implemented.
         if (!validConditions5To8(points)) {
             return false;
         }
 
         // GROUP INTEGRATION REQUIRED BEFORE FINAL SUBMISSION:
-        // Conditions 6-8 still need to be added to validConditions5To8.
+        // Conditions 7-8 still need to be added to validConditions5To8.
         // Teammate 2: reject inputs failing conditions 9–11 here.
         // Do not claim this individual file validates all 11 conditions.
 
@@ -79,11 +79,11 @@ public class Course {
 
     /**
      * Condition 5: Points for one assessment must not exceed 50.
-     * Condition 6 (pending): Total assessment points must not exceed 100.
+     * Condition 6: Total assessment points must not exceed 100.
      * Condition 7 (pending): Submission type must be pdf, zip, or doc.
      * Condition 8 (pending): Group assessments must have a grouping name.
      *
-     * Currently only condition 5 is implemented.
+     * Currently conditions 5 and 6 are implemented.
      * Validation is read-only: nothing is created or modified on rejection.
      */
     private boolean validConditions5To8(int points) {
@@ -92,7 +92,16 @@ public class Course {
             return false;
         }
 
-        // TODO: Implement conditions 6-8 here.
+        // C6: Include the new assessment when checking the course total.
+        int totalPoints = points;
+        for (Assessment existing : assessments) {
+            totalPoints += existing.getPoints();
+        }
+        if (totalPoints > 100) {
+            return false;
+        }
+
+        // TODO: Implement conditions 7-8 here.
         return true;
     }
 }
