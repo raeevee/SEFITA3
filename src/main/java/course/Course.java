@@ -3,14 +3,23 @@ package course;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+
 
 /**
  * Shared course implementation for Assessment 4.
- * Member A is responsible for conditions 1-4.
- * Member B is responsible for conditions 5-8.
- * The rest of the team's rules must be integrated before final submission.
+ * Abbas Sheriffdeen is responsible for conditions 1-4.
+ * Nhua Lam Tam is responsible for conditions 5-8.
+ * Imath Wickramarachchi is responsible for conditions 9 to 11
  */
 public class Course {
+    // strict format so fake dates like 29/02/2026 get rejected
+    private static final DateTimeFormatter DATE_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm").withResolverStyle(ResolverStyle.STRICT);
+
     // Common course state required for the individual tests to compile and run.
     private final List<Assessment> assessments = new ArrayList<>();
 
@@ -33,9 +42,10 @@ public class Course {
             return false;
         }
 
-        // GROUP INTEGRATION REQUIRED BEFORE FINAL SUBMISSION:
-        // Teammate 2: reject inputs failing conditions 9–11 here.
-        // Do not claim this individual file validates all 11 conditions.
+        // check conditions 9 to 11
+        if (!validConditions9To11(group, groupingName, publishDateTime, dueDateTime, hideDateTime)) {
+            return false;
+        }
 
         // Add an Assessment only after all implemented checks have passed.
         Assessment newAssessment = new Assessment(name, description, points,
@@ -111,5 +121,48 @@ public class Course {
             return false;
         }
         return true;
+    }
+
+    // conditions 9, 10 and 11
+    private boolean validConditions9To11(boolean group, String groupingName,
+                                         String publishDateTime, String dueDateTime,
+                                         String hideDateTime) {
+        // C9: grouping name can't be used by another assessment
+        if (group) {
+            for (Assessment a : assessments) {
+                if (groupingName.equals(a.getGroupingName())) {
+                    return false;
+                }
+            }
+        }
+
+        // C10: turn the strings into dates (null means the format was wrong)
+        LocalDateTime publish = parseDateTime(publishDateTime);
+        LocalDateTime due = parseDateTime(dueDateTime);
+        LocalDateTime hide = parseDateTime(hideDateTime);
+        if (publish == null || due == null || hide == null) {
+            return false;
+        }
+
+        // C11: publish < due < hide (same time is not allowed)
+        if (!due.isAfter(publish)) {
+            return false;
+        }
+        if (!hide.isAfter(due)) {
+            return false;
+        }
+        return true;
+    }
+
+    // reads the date, gives back null if it is not valid
+    private LocalDateTime parseDateTime(String text) {
+        if (text == null) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(text, DATE_TIME_FORMAT);
+        } catch (DateTimeParseException e) {
+            return null; // e.g. 29/02/2026 fails here
+        }
     }
 }
